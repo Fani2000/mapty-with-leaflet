@@ -12,7 +12,7 @@ const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const mapContainer = document.getElementById('map');
 
-let map;
+let map, mapEvent;
 
 if (navigator.geolocation)
   navigator.geolocation.getCurrentPosition(
@@ -39,8 +39,9 @@ if (navigator.geolocation)
         .openPopup();
 
       map.on('click', e => {
-        const { lat, lng } = e.latlng;
-        L.marker([lat, lng]).addTo(map);
+        form.classList.remove('hidden');
+        inputDistance.focus();
+        mapEvent = e;
       });
     },
     err => {
@@ -52,3 +53,37 @@ if (navigator.geolocation)
 else {
   alert("Your browser doesn't support the geolocation");
 }
+
+inputType.addEventListener('change', e => {
+  inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+  inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+});
+
+form.addEventListener('submit', ev => {
+  ev.preventDefault();
+
+  console.log(
+    inputType.value,
+    inputDistance.value,
+    inputCadence.value,
+    inputDuration.value
+  );
+
+  const { lat, lng } = mapEvent.latlng;
+  L.marker([lat, lng], { riseOnHover: true })
+    .addTo(map)
+    .bindPopup(
+      L.popup({
+        maxWidth: 250,
+        minWidth: 100,
+        autoClose: false,
+        closeOnClick: false,
+        className: `${inputType.value}-popup`,
+      })
+    )
+    .setPopupContent('Workout')
+    .openPopup();
+
+  inputDistance.value = inputCadence.value = inputDuration.value = '';
+  form.classList.add('hidden');
+});
