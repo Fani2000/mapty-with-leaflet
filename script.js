@@ -12,7 +12,6 @@ const mapContainer = document.getElementById('map');
 class Workout {
   #date = new Date();
   id = (Date.now() + '').slice(-10);
-  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords;
@@ -26,9 +25,6 @@ class Workout {
     // prettier-ignore
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.#date.getMonth()]} ${this.#date.getDate()}`;
   };
-  click() {
-    this.clicks++;
-  }
 }
 
 class Running extends Workout {
@@ -73,7 +69,16 @@ class App {
     inputType.addEventListener('change', this._toggleElevationField);
     form.addEventListener('submit', this._newWorkout);
     containerWorkouts.addEventListener('click', this._moveToPopup);
+    this._loadWorkouts();
   }
+  _loadWorkouts = () => {
+    const workouts = JSON.parse(localStorage.getItem('workouts'));
+    if (!workouts) return;
+    this.#workouts = workouts;
+    this.#workouts.forEach(workout => {
+      this._renderWorkout(workout);
+    });
+  };
   _moveToPopup = e => {
     const workoutEl = e.target.closest('.workout');
     // console.log(workoutEl);
@@ -89,8 +94,6 @@ class App {
         duration: 1,
       },
     });
-    // Workout clicks method
-    workout.click();
   };
   _getPosition() {
     if (navigator.geolocation)
@@ -131,6 +134,10 @@ class App {
       .openPopup();
 
     this.#map.on('click', this._showForm);
+
+    this.#workouts.forEach(workout => {
+      this._renderWorkoutMarker(workout);
+    });
   };
   _showForm = e => {
     form.classList.remove('hidden');
@@ -188,6 +195,12 @@ class App {
     // Render workout on the map as marker
     this._renderWorkoutMarker(workout);
     this._renderWorkout(workout);
+
+    // Store workouts in the local storage
+    this._persistWorkouts();
+  };
+  _persistWorkouts = () => {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
   };
   _renderWorkoutMarker = workout => {
     L.marker(workout.coords, {
